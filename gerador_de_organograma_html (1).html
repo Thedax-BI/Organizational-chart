@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Gerador de Organograma SVG</title>
+  <style>
+    :root {
+      --bg: #efefef;
+      --card: #eee;
+      --ink: #0b0f14;
+      --muted: #3d434e;
+      --brand: #3b82f6;
+      --ok: #22c55e;
+      --warn: #f59e0b;
+      --danger: #ef4444;
+      --border: #263241;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--ink); font: 14px/1.4 system-ui, -apple-system, Segoe UI, Roboto, Arial, Noto Sans, "Helvetica Neue", sans-serif; }
+    header { padding: 16px 20px; border-bottom: 1px solid var(--border); display:flex; align-items:center; gap:12px; }
+    header h1 { margin: 0; font-size: 18px; font-weight: 700; }
+    .wrap { display: grid; grid-template-columns: 480px 1fr; gap: 16px; padding: 16px; }
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+    .card h2 { margin: 0; padding: 12px 14px; font-size: 14px; font-weight: 700; border-bottom: 1px solid var(--border); }
+    .card-body { padding: 14px; }
+    textarea { width: 100%; min-height: 180px; background: #eee; color: var(--ink); border: 1px solid var(--border); border-radius: 10px; padding: 10px; resize: vertical; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; }
+    .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+    .row + .row { margin-top: 10px; }
+    label { font-size: 12px; color: var(--muted); }
+    input[type="text"], select { width: 100%; background: #eee; color: var(--ink); border: 1px solid var(--border); border-radius: 10px; padding: 8px 10px; }
+    input[type="color"]{ border: none; background: transparent; height: 36px; width: 44px; padding: 0; }
+    button { appearance: none; border: 1px solid var(--border); background: #eee; color: var(--ink); border-radius: 10px; padding: 8px 12px; cursor: pointer; font-weight: 600; }
+    button.primary { background: var(--brand); border-color: #2c6ddf; color: white; }
+    button.success { background: var(--ok); border-color: #1ea34f; color: white; }
+    button.ghost { background: transparent; }
+    button.danger { background: var(--danger); color: white; border-color: #c72e2e; }
+    button + button { margin-left: 8px; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { border-bottom: 1px solid var(--border); padding: 8px; font-size: 13px; }
+    th { text-align: left; color: var(--muted); position: sticky; top: 0; background: var(--card); z-index: 1; }
+    tr:hover td { background: #0f1620; }
+    .tools { display:flex; gap:8px; flex-wrap:wrap; }
+    .hint { color: var(--muted); font-size: 12px; }
+    .badge { display:inline-block; padding:3px 8px; border-radius: 999px; font-size: 12px; font-weight: 700; }
+    .grid-2 { display:grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .grid-3 { display:grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+    .legend { display:flex; gap:12px; flex-wrap:wrap; }
+    .pill { border-radius:999px; padding:2px 10px; font-size:12px; font-weight:700; color:#fff; display:inline-block; }
+    .preview { background:#eee; border:1px solid var(--border); border-radius: 12px; padding:8px; height: 720px; overflow:auto; }
+    .footer { padding: 10px 16px 16px; display:flex; gap:10px; justify-content:flex-end; }
+    .small { font-size: 11px; color: var(--muted); }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Gerador de Organograma SVG</h1>
+    <span class="hint">Agora com nível superior (Presidência/CEO) → Diretor → Departamento → Subárea → Liderança.</span>
+  </header>
+
+  <div class="wrap">
+    <section class="card">
+      <h2>1) Entrada de dados (5 níveis)</h2>
+      <div class="card-body">
+        <textarea id="rawInput" placeholder="Ex.:\nPresidencia -> Diretor 01 -> Produção -> Venoc -> Liderança 01\nPresidencia -> Diretor 01 -> Produção -> Manutenção -> Liderança 01\n..."></textarea>
+        <div class="row" style="margin-top:10px; justify-content: space-between;">
+          <div class="tools">
+            <button id="btnLoadSample" class="ghost">Carregar exemplo</button>
+            <button id="btnParse" class="primary">Transformar em tabela</button>
+            <button id="btnClear" class="ghost">Limpar</button>
+          </div>
+          <div class="small">Cada linha representa um caminho completo (Presidência → Diretor → Departamento → Subárea → Liderança).</div>
+        </div>
+
+        <hr style="border: none; border-top: 1px solid var(--border); margin: 14px 0;" />
+
+        <div class="grid-2">
+          <div>
+            <label for="chartTitle">Título do organograma</label>
+            <input type="text" id="chartTitle" value="Organograma – Estrutura por Diretoria" />
+          </div>
+          <div class="row" style="align-items:center; justify-content: space-between;">
+            <div>
+              <label>Dimensões do SVG</label>
+              <div class="row">
+                <input type="text" id="svgWidth" value="1400" style="width:100px;" />
+                <span class="hint">×</span>
+                <input type="text" id="svgHeight" value="1200" style="width:100px;" />
+              </div>
+            </div>
+            <div>
+              <label>Baixar ao gerar</label><br/>
+              <select id="autoDownload">
+                <option value="yes">Sim</option>
+                <option value="no" selected>Não</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div style="margin-top:10px;">
+          <div class="grid-2">
+            <div>
+              <h3 style="margin:4px 0 8px; font-size:13px; color:var(--muted);">Cores por Diretoria</h3>
+              <div id="directorColors" class="row" style="flex-direction:column; gap:8px;"></div>
+            </div>
+            <div>
+              <h3 style="margin:4px 0 8px; font-size:13px; color:var(--muted);">Cores por Liderança (pílulas)</h3>
+              <div id="leadColors" class="row" style="flex-direction:column; gap:8px;"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card" style="grid-column: 1 / -1;">
+      <h2>2) Tabela editável</h2>
+      <div class="card-body">
+        <div class="tools" style="margin-bottom:10px;">
+          <button id="btnAddRow">+ Linha</button>
+          <button id="btnDeleteSelected" class="danger">Excluir selecionadas</button>
+          <button id="btnExportCSV">Exportar CSV</button>
+          <input type="file" id="csvFile" accept=".csv" style="display:none;" />
+          <button id="btnImportCSV">Importar CSV</button>
+        </div>
+        <div style="max-height:340px; overflow:auto; border:1px solid var(--border); border-radius: 10px;">
+          <table id="dataTable">
+            <thead>
+              <tr>
+                <th style="width:30px;"><input type="checkbox" id="checkAll" /></th>
+                <th>Presidência</th>
+                <th>Diretoria</th>
+                <th>Departamento</th>
+                <th>Subárea</th>
+                <th>Liderança</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section class="card" style="grid-column: 1 / -1;">
+      <h2>3) Gerar e visualizar SVG</h2>
+      <div class="card-body">
+        <div class="tools" style="margin-bottom:10px;">
+          <button id="btnGenerate" class="success">Gerar SVG</button>
+          <button id="btnDownload" disabled>Baixar SVG</button>
+          <button id="btnCopy" disabled>Copiar SVG</button>
+        </div>
+        <div id="svgContainer" class="preview"></div>
+      </div>
+      <div class="footer hint">Linhas sólidas = reporte hierárquico. Ajuste cores e dados antes de gerar.</div>
+    </section>
+  </div>
+
+  <script>
+    // ——— Utilidades básicas ———
+    const $ = (sel, el=document) => el.querySelector(sel);
+    const $$ = (sel, el=document) => Array.from(el.querySelectorAll(sel));
+
+    function download(filename, text) {
+      const blob = new Blob([text], {type: 'image/svg+xml;charset=utf-8'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = filename; a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function csvEscape(v){
+      if (v == null) return '';
+      const s = String(v);
+      if (/[",\n]/.test(s)) return '"' + s.replace(/"/g, '""') + '"';
+      return s;
+    }
+
+    function toCSV(rows){
+      const header = ['Presidência','Diretoria','Departamento','Subárea','Liderança'];
+      const lines = [header.join(',')];
+      for (const r of rows){
+        lines.push([r.pres, r.director, r.dept, r.sub, r.lead].map(csvEscape).join(','));
+      }
+      return lines.join('\n');
+    }
+
+    function fromCSV(text){
+      const lines = text.split(/\r?\n/).filter(Boolean);
+      if (!lines.length) return [];
+      const out = [];
+      for (let i=1;i<lines.length;i++){
+        const row = lines[i];
+        const re = /(?:^|,)(\"(?:(?:\"\"|[^\"])*)\"|[^,]*)/g;
+        const cols = [];
+        let m;
+        while ((m = re.exec(','+row)) !== null) {
+          let c = m[1];
+          if (c.startsWith('"')) c = c.slice(1, -1).replace(/""/g, '"');
+          if (c.startsWith(',')) c = c.slice(1);
+          cols.push(c.trim());
+        }
+        const [pres, director, dept, sub, lead] = cols;
+        if (director) out.push({pres, director, dept, sub, lead});
+      }
+      return out;
+    }
+
+    // ——— Amostra com Presidência ———
+    const SAMPLE = `Presidencia -> Diretor 01 -> Produção -> Venoc -> Liderança 01\nPresidencia -> Diretor 01 -> Produção -> Manutenção -> Liderança 01\nPresidencia -> Diretor 01 -> Produção -> Corte / Dobradeira -> Liderança 01\nPresidencia -> Diretor 01 -> Produção -> Grelha -> Liderança 02\nPresidencia -> Diretor 01 -> Produção -> Difusor -> Liderança 02\nPresidencia -> Diretor 01 -> Produção -> Registro -> Liderança 02\nPresidencia -> Diretor 01 -> Produção -> Caixa Plenum -> Liderança 02\nPresidencia -> Diretor 01 -> Produção -> Solda -> Liderança 03\nPresidencia -> Diretor 01 -> Produção -> Almoxarifado -> Liderança 03\nPresidencia -> Diretor 01 -> Produção -> Compras -> Liderança 03\nPresidencia -> Diretor 01 -> Produção -> PPCP -> Liderança 03\nPresidencia -> Diretor 02 -> Comercial -> Vendas -> Liderança 01\nPresidencia -> Diretor 02 -> Comercial -> Estoque / Expedição -> Liderança 02\nPresidencia -> Diretor 03 -> Administrativo -> Financeiro -> Liderança 01\nPresidencia -> Diretor 03 -> Administrativo -> Fiscal -> Liderança 01\nPresidencia -> Diretor 03 -> Administrativo -> Contábil -> Liderança 01\nPresidencia -> Diretor 03 -> Administrativo -> RH -> Liderança 01`;
+
+    // ——— Estado ———
+    let rows = [];
+    let svgText = '';
+
+    // ——— UI: Entrada ———
+    $('#btnLoadSample').addEventListener('click', () => {
+      $('#rawInput').value = SAMPLE;
+    });
+
+    $('#btnClear').addEventListener('click', () => {
+      $('#rawInput').value = '';
+    });
+
+    $('#btnParse').addEventListener('click', () => {
+      const text = $('#rawInput').value.trim();
+      const lines = text.split(/\r?\n/).map(s => s.trim()).filter(Boolean);
+      const parsed = [];
+      for (const line of lines){
+        const parts = line.split('->').map(s => s.trim());
+        if (parts.length >= 5){
+          const [pres, director, dept, sub, lead] = parts;
+          parsed.push({pres, director, dept, sub, lead});
+        } else if (parts.length === 4){
+          // compat: se não vier presidência, deixa vazio
+          const [director, dept, sub, lead] = parts;
+          parsed.push({pres:'', director, dept, sub, lead});
+        }
+      }
+      rows = parsed;
+      renderTable();
+      deriveColorEditors();
+    });
+
+    // ——— Tabela ———
+    function renderTable(){
+      const tbody = $('#dataTable tbody');
+      tbody.innerHTML = '';
+      for (const r of rows){
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td><input type=\"checkbox\" class=\"rowcheck\"/></td>
+          <td><input type=\"text\" value=\"${r.pres || ''}\"/></td>
+          <td><input type=\"text\" value=\"${r.director}\"/></td>
+          <td><input type=\"text\" value=\"${r.dept}\"/></td>
+          <td><input type=\"text\" value=\"${r.sub}\"/></td>
+          <td><input type=\"text\" value=\"${r.lead}\"/></td>
+        `;
+        tbody.appendChild(tr);
+      }
+      $('#checkAll').checked = false;
+    }
+
+    function collectRows(){
+      const out = [];
+      $$('#dataTable tbody tr').forEach(tr => {
+        const tds = $$('td', tr);
+        const pres = $('input', tds[1]).value.trim();
+        const director = $('input', tds[2]).value.trim();
+        const dept = $('input', tds[3]).value.trim();
+        const sub = $('input', tds[4]).value.trim();
+        const lead = $('input', tds[5]).value.trim();
+        if (director && dept && sub) out.push({pres, director, dept, sub, lead});
+      });
+      return out;
+    }
+
+    $('#btnAddRow').addEventListener('click', () => {
+      rows.push({pres:'', director:'', dept:'', sub:'', lead:''});
+      renderTable();
+    });
+
+    $('#btnDeleteSelected').addEventListener('click', () => {
+      const keep = [];
+      $$('#dataTable tbody tr').forEach(tr => {
+        const checked = $('.rowcheck', tr).checked;
+        if (!checked){
+          const tds = $$('td', tr);
+          keep.push({
+            pres: $('input', tds[1]).value.trim(),
+            director: $('input', tds[2]).value.trim(),
+            dept: $('input', tds[3]).value.trim(),
+            sub: $('input', tds[4]).value.trim(),
+            lead: $('input', tds[5]).value.trim(),
+          });
+        }
+      });
+      rows = keep;
+      renderTable();
+      deriveColorEditors();
+    });
+
+    $('#checkAll').addEventListener('change', (e) => {
+      $$('.rowcheck').forEach(cb => cb.checked = e.target.checked);
+    });
+
+    // ——— Exportar / Importar CSV ———
+    $('#btnExportCSV').addEventListener('click', () => {
+      rows = collectRows();
+      download('organograma_base.csv', toCSV(rows));
+    });
+
+    $('#btnImportCSV').addEventListener('click', () => $('#csvFile').click());
+    $('#csvFile').addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        rows = fromCSV(reader.result);
+        renderTable();
+        deriveColorEditors();
+      };
+      reader.readAsText(file, 'utf-8');
+      e.target.value = '';
+    });
+
+    // ——— Cores de diretoria e liderança ———
+    let directorColorMap = {};
+    let leadColorMap = {
+      'Liderança 01': '#6C5CE7',
+      'Liderança 02': '#E91E63',
+      'Liderança 03': '#16A085',
+    };
+
+    function deriveColorEditors(){
+      rows = collectRows();
+      const directors = [...new Set(rows.map(r => r.director).filter(Boolean))];
+      const leads = [...new Set(rows.map(r => r.lead).filter(Boolean))];
+
+      directors.forEach((d, i) => {
+        if (!directorColorMap[d]){
+          const palette = ['#2F80ED','#27AE60','#F2994A','#9B51E0','#EF4444','#10B981'];
+          directorColorMap[d] = palette[i % palette.length];
+        }
+      });
+
+      const dirHost = $('#directorColors');
+      dirHost.innerHTML = '';
+      directors.forEach(d => {
+        const div = document.createElement('div');
+        div.className = 'row';
+        div.innerHTML = `
+          <input type=\"color\" value=\"${directorColorMap[d]}\" data-key=\"${d}\" class=\"color-director\"/>
+          <input type=\"text\" value=\"${d}\" disabled style=\"flex:1; opacity:0.8;\"/>
+        `;
+        dirHost.appendChild(div);
+      });
+      $$('.color-director').forEach(inp => {
+        inp.addEventListener('input', (e) => {
+          directorColorMap[e.target.dataset.key] = e.target.value;
+        });
+      });
+
+      const leadHost = $('#leadColors');
+      leadHost.innerHTML = '';
+      leads.forEach(l => {
+        if (!leadColorMap[l]){
+          const extras = ['#0EA5E9','#A855F7','#F97316','#22C55E','#E11D48','#14B8A6'];
+          leadColorMap[l] = extras[(Object.keys(leadColorMap).length) % extras.length];
+        }
+        const div = document.createElement('div');
+        div.className = 'row';
+        div.innerHTML = `
+          <input type=\"color\" value=\"${leadColorMap[l]}\" data-key=\"${l}\" class=\"color-lead\"/>
+          <input type=\"text\" value=\"${l}\" disabled style=\"flex:1; opacity:0.8;\"/>
+          <span class=\"pill\" style=\"background:${leadColorMap[l]}\">${l}</span>
+        `;
+        leadHost.appendChild(div);
+      });
+      $$('.color-lead').forEach(inp => {
+        inp.addEventListener('input', (e) => {
+          leadColorMap[e.target.dataset.key] = e.target.value;
+          deriveColorEditors();
+        });
+      });
+    }
+
+    // ——— SVG ———
+    function esc(t){
+      return String(t)
+        .replaceAll('&','&amp;')
+        .replaceAll('<','&lt;')
+        .replaceAll('>','&gt;')
+        .replaceAll('"','&quot;')
+        .replaceAll("'",'&apos;');
+    }
+
+    function buildSVG(rows, opt={}){
+      const W = parseInt($('#svgWidth').value || '1400', 10);
+      const H = parseInt($('#svgHeight').value || '1200', 10);
+      const MARGIN_X = 40; // MARGIN_Y não usado diretamente
+      const COL_W = 420, COL_GAP = 40;
+      const PRES_H = 60, DIR_H = 60, DEPT_H = 48, SUB_H = 44, SUB_VGAP = 16;
+      const PRES_Y = 24, DIR_Y = PRES_Y + PRES_H + 40, DEPT_Y = DIR_Y + DIR_H + 20, SUB_Y0 = DEPT_Y + DEPT_H + 30;
+
+      // Agrupar por (pres, director, dept)
+      const map = new Map();
+      const key = (r) => (r.pres||'')+'⎮'+r.director+'⎮'+r.dept;
+      for (const r of rows){
+        if (!map.has(key(r))) map.set(key(r), {pres:r.pres||'', director:r.director, dept:r.dept, subareas:[]});
+        map.get(key(r)).subareas.push([r.sub, r.lead]);
+      }
+      const groups = [...map.values()];
+
+      // calcular colunas
+      const nCols = groups.length;
+      const totalW = MARGIN_X*2 + nCols*COL_W + (nCols-1)*COL_GAP;
+      const width = Math.max(W, totalW);
+
+      const today = new Date();
+      const dateStr = today.toLocaleDateString('pt-BR');
+      const title = esc($('#chartTitle').value || 'Organograma');
+
+      const colXs = [];
+      for (let i=0;i<nCols;i++) colXs.push(MARGIN_X + i*(COL_W + COL_GAP));
+
+      // índice da primeira coluna por diretor (para ligar a Presidência a um único ponto por diretor)
+      const firstByDirector = {};
+      groups.forEach((g, idx) => {
+        if (firstByDirector[g.director] == null) firstByDirector[g.director] = idx;
+      });
+
+      // Presidência (pega a primeira não vazia; se todas vazias, omite)
+      const presName = (rows.find(r => r.pres)?.pres) || '';
+
+      let svg = '';
+      svg += `<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"${width}\" height=\"${H}\" viewBox=\"0 0 ${width} ${H}\">`;
+      svg += `<style>
+        .title { font: 700 26px 'Segoe UI', Roboto, Arial, sans-serif; fill: #0b0f14; }
+        .subtitle { font: 400 14px 'Segoe UI', Roboto, Arial, sans-serif; fill: #0b0f14; }
+        .box { fill: #fff; stroke: #233042; stroke-width: 1.2; rx: 10; }
+        .dir { fill: #fff; stroke: #2a3a51; stroke-width: 1.4; rx: 12; }
+        .dept { fill: #fff; stroke: #233042; stroke-width: 1.2; rx: 10; }
+        .pres { fill: #fff; stroke: #b5c1d1; stroke-width: 1.6; rx: 12; }
+        .dir-label, .dept-label, .sub-label { fill: #0b0f14; font-family: 'Segoe UI', Roboto, Arial, sans-serif; }
+        .dir-label { font-weight: 700; font-size: 18px; }
+        .dept-label { font-weight: 700; font-size: 15px; }
+        .sub-label { font-weight: 600; font-size: 14px; }
+        .pres-label { font: 700 18px 'Segoe UI', Roboto, Arial, sans-serif; fill: #0b0f14; }
+        .lead-pill { font: 700 12px 'Segoe UI', Roboto, Arial, sans-serif; fill: #fff; }
+        .connector { stroke: #2a3a51; stroke-width: 1.4; }
+      </style>`;
+
+      // header
+      svg += `<text x=\"${MARGIN_X}\" y=\"28\" class=\"title\">${title}</text>`;
+      svg += `<text x=\"${MARGIN_X}\" y=\"50\" class=\"subtitle\">Gerado em ${dateStr} • Linhas sólidas = reporte hierárquico</text>`;
+
+      // desenhar colunas (Diretor → Departamento → Subáreas)
+      groups.forEach((col, idx) => {
+        const x = colXs[idx];
+        const dirColor = directorColorMap[col.director] || '#2F80ED';
+        // diretor
+        svg += `<rect x=\"${x}\" y=\"${DIR_Y}\" width=\"${COL_W}\" height=\"${DIR_H}\" class=\"dir\" />`;
+        svg += `<rect x=\"${x}\" y=\"${DIR_Y}\" width=\"8\" height=\"${DIR_H}\" fill=\"${dirColor}\"/>`;
+        svg += `<text x=\"${x+20}\" y=\"${DIR_Y+38}\" class=\"dir-label\">${esc(col.director)}</text>`;
+        // dept
+        svg += `<rect x=\"${x}\" y=\"${DEPT_Y}\" width=\"${COL_W}\" height=\"${DEPT_H}\" class=\"dept\" />`;
+        svg += `<text x=\"${x+16}\" y=\"${DEPT_Y+30}\" class=\"dept-label\">${esc(col.dept)}</text>`;
+        // conector
+        svg += `<line x1=\"${x+COL_W/2}\" y1=\"${DIR_Y+DIR_H}\" x2=\"${x+COL_W/2}\" y2=\"${DEPT_Y}\" class=\"connector\" />`;
+        // subáreas
+        let y = SUB_Y0;
+        for (const [sub, lead] of col.subareas){
+          svg += `<line x1=\"${x+COL_W/2}\" y1=\"${DEPT_Y+DEPT_H}\" x2=\"${x+COL_W/2}\" y2=\"${y}\" class=\"connector\" />`;
+          svg += `<rect x=\"${x}\" y=\"${y}\" width=\"${COL_W}\" height=\"${SUB_H}\" class=\"box\" />`;
+          svg += `<text x=\"${x+16}\" y=\"${y+28}\" class=\"sub-label\">${esc(sub)}</text>`;
+          const pill_w = 120, pill_h = 22;
+          const pill_x = x + COL_W - pill_w - 12;
+          const pill_y = y + (SUB_H - pill_h)/2;
+          const pillColor = leadColorMap[lead] || '#455A64';
+          svg += `<rect x=\"${pill_x}\" y=\"${pill_y}\" width=\"${pill_w}\" height=\"${pill_h}\" rx=\"11\" fill=\"${pillColor}\"/>`;
+          svg += `<text x=\"${pill_x+12}\" y=\"${pill_y+15}\" class=\"lead-pill\">${esc(lead)}</text>`;
+          y += SUB_H + SUB_VGAP;
+        }
+      });
+
+      // Presidência (topo) + conectores até cada diretoria (uma vez por diretoria)
+      if (presName){
+        const leftX = colXs[0];
+        const rightX = colXs[colXs.length-1] + COL_W;
+        const presW = 320;
+        const presX = (leftX + rightX)/2 - presW/2;
+        svg += `<rect x=\"${presX}\" y=\"${PRES_Y}\" width=\"${presW}\" height=\"${PRES_H}\" class=\"pres\" />`;
+        svg += `<text x=\"${presX+20}\" y=\"${PRES_Y+38}\" class=\"pres-label\">${esc(presName)}</text>`;
+        const presMidX = presX + presW/2;
+        Object.entries(firstByDirector).forEach(([dir, idx]) => {
+          const x = colXs[idx] + COL_W/2;
+          svg += `<line x1=\"${presMidX}\" y1=\"${PRES_Y+PRES_H}\" x2=\"${x}\" y2=\"${DIR_Y}\" class=\"connector\" />`;
+        });
+      }
+
+      // legenda
+      const legend_x = MARGIN_X; const legend_y = H - 100; const legend_w = width - 2*MARGIN_X;
+      svg += `<rect x=\"${legend_x}\" y=\"${legend_y}\" width=\"${legend_w}\" height=\"90\" rx=\"12\" fill=\"#fff\" stroke=\"#0b0f14\"/>`;
+      // presidência
+      if (presName){
+        svg += `<rect x=\"${legend_x+16}\" y=\"${legend_y+10}\" width=\"12\" height=\"12\" rx=\"2\" fill=\"#0f1620\" stroke=\"#b5c1d1\"/>`;
+        svg += `<text x=\"${legend_x+36}\" y=\"${legend_y+20}\" class=\"subtitle\">${esc(presName)}</text>`;
+      }
+      // diretoria
+      let lx = legend_x + 16; let ly = legend_y + 44;
+      const uniqueDirs = [...new Set(rows.map(r => r.director))];
+      uniqueDirs.forEach((d,i) => {
+        const c = directorColorMap[d] || '#2F80ED';
+        svg += `<rect x=\"${lx}\" y=\"${ly-14}\" width=\"12\" height=\"12\" rx=\"2\" fill=\"${c}\"/>`;
+        svg += `<text x=\"${lx+20}\" y=\"${ly-4}\" class=\"subtitle\">${esc(d)}</text>`;
+        lx += 200;
+      });
+      // liderança
+      lx = legend_x + 16; ly = legend_y + 70;
+      const uniqueLeads = [...new Set(rows.map(r => r.lead))];
+      uniqueLeads.forEach(l => {
+        const c = leadColorMap[l] || '#455A64';
+        svg += `<rect x=\"${lx}\" y=\"${ly-14}\" width=\"12\" height=\"12\" rx=\"2\" fill=\"${c}\"/>`;
+        svg += `<text x=\"${lx+20}\" y=\"${ly-4}\" class=\"subtitle\">${esc(l)}</text>`;
+        lx += 200;
+      });
+
+      svg += `</svg>`;
+      return svg;
+    }
+
+    function regenerateColorsIfNeeded(){
+      deriveColorEditors();
+    }
+
+    $('#btnGenerate').addEventListener('click', () => {
+      rows = collectRows();
+      regenerateColorsIfNeeded();
+      svgText = buildSVG(rows, {});
+      $('#svgContainer').innerHTML = svgText;
+      $('#btnDownload').disabled = false;
+      $('#btnCopy').disabled = false;
+      if ($('#autoDownload').value === 'yes') {
+        download('organograma.svg', svgText);
+      }
+    });
+
+    $('#btnDownload').addEventListener('click', () => {
+      if (!svgText) return;
+      download('organograma.svg', svgText);
+    });
+
+    $('#btnCopy').addEventListener('click', async () => {
+      if (!svgText) return;
+      try {
+        await navigator.clipboard.writeText(svgText);
+        alert('SVG copiado para a área de transferência.');
+      } catch (e) {
+        alert('Não foi possível copiar automaticamente. Baixe o arquivo.');
+      }
+    });
+
+    // Inicializa com a amostra enviada
+    $('#rawInput').value = SAMPLE;
+    $('#btnParse').click();
+  </script>
+</body>
+</html>
