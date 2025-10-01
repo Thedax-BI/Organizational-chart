@@ -199,7 +199,49 @@
       }
       return out;
     }
-
+    const SAMPLE = `Presidencia -> Diretor 01 -> Produção 01 -> Coordenacao 01 -> Venoc -> Liderança 01 -> Colaborador 01
+Presidencia -> Diretor 01 -> Produção 01 -> Coordenacao 01 -> Venoc -> Liderança 01 -> Colaborador 02
+Presidencia -> Diretor 01 -> Produção 01 -> Coordenacao 01 -> Venoc -> Liderança 01 -> Colaborador 03
+Presidencia -> Diretor 01 -> Produção 01 -> Coordenacao 01 -> Venoc -> Liderança 01 -> Colaborador 04
+Presidencia -> Diretor 01 -> Produção 01 -> Coordenacao 01 -> Venoc -> Liderança 01 -> Colaborador 05
+Presidencia -> Diretor 01 -> Produção 01 -> Coordenacao 01 ->  Manutenção -> Liderança 01 -> Colaborador 01 
+Presidencia -> Diretor 01 -> Produção 01 -> Coordenacao 01 ->  Manutenção -> Liderança 01 -> Colaborador 02
+Presidencia -> Diretor 01 -> Produção 01 -> Coordenacao 01 ->  Corte / Dobradeira -> Liderança 01 -> Colaborador 01
+Presidencia -> Diretor 01 -> Produção 01 -> Coordenacao 01 ->  Corte / Dobradeira -> Liderança 01 -> Colaborador 02
+Presidencia -> Diretor 01 -> Produção 01 -> Coordenacao 01 ->  Corte / Dobradeira -> Liderança 01 -> Colaborador 03
+Presidencia -> Diretor 01 -> Produção 02 -> Coordenacao 01 ->  Grelha -> Liderança 02 -> Colaborador 01
+Presidencia -> Diretor 01 -> Produção 02 -> Coordenacao 01 ->  Grelha -> Liderança 02 -> Colaborador 02
+Presidencia -> Diretor 01 -> Produção 02 -> Coordenacao 01 ->  Difusor -> Liderança 02 -> Colaborador 01 
+Presidencia -> Diretor 01 -> Produção 02 -> Coordenacao 01 ->  Difusor -> Liderança 02 -> Colaborador 02
+Presidencia -> Diretor 01 -> Produção 02 -> Coordenacao 01 ->  Registro -> Liderança 02 -> Colaborador 01 
+Presidencia -> Diretor 01 -> Produção 02 -> Coordenacao 01 ->  Registro -> Liderança 02 -> Colaborador 02
+Presidencia -> Diretor 01 -> Produção 02 -> Coordenacao 01 ->  Caixa Plenum -> Liderança 02 -> Colaborador 01 
+Presidencia -> Diretor 01 -> Produção 02 -> Coordenacao 01 ->  Caixa Plenum -> Liderança 02 -> Colaborador 02
+Presidencia -> Diretor 01 -> Produção 02 -> Coordenacao 01 ->  Solda -> Liderança 03 -> Colaborador 01 
+Presidencia -> Diretor 01 -> Produção 02 -> Coordenacao 01 ->  Solda -> Liderança 03 -> Colaborador 02 
+Presidencia -> Diretor 01 -> Produção 02 -> Coordenacao 01 ->  Solda -> Liderança 03 -> Colaborador 03
+Presidencia -> Diretor 01 -> Produção 02 -> Coordenacao 01 ->  Almoxarifado -> Liderança 03 -> Colaborador 01 
+Presidencia -> Diretor 01 -> Produção 02 -> Coordenacao 01 ->  Almoxarifado -> Liderança 03 -> Colaborador 02
+Presidencia -> Diretor 01 -> Produção 02 -> Coordenacao 01 ->  Compras -> Liderança 03 -> Colaborador 01 
+Presidencia -> Diretor 01 -> Produção 02 -> Coordenacao 01 ->  Compras -> Liderança 03 -> Colaborador 02
+Presidencia -> Diretor 01 -> Produção 02 -> Coordenacao 01 ->  PPCP -> Liderança 03 -> Colaborador 01 
+Presidencia -> Diretor 01 -> Produção 02 -> Coordenacao 01 ->  PPCP -> Liderança 03 -> Colaborador 02
+Presidencia -> Diretor 02 -> Comercial -> Coordenacao 01 ->  Vendas -> Liderança 01 -> Colaborador 01
+Presidencia -> Diretor 02 -> Comercial -> Coordenacao 01 ->  Vendas -> Liderança 01 -> Colaborador 02
+Presidencia -> Diretor 02 -> Comercial -> Coordenacao 01 ->  Estoque / Expedição -> Liderança 02 -> Colaborador 01
+Presidencia -> Diretor 02 -> Comercial -> Coordenacao 01 ->  Estoque / Expedição -> Liderança 02 -> Colaborador 02
+Presidencia -> Diretor 03 -> Administrativo -> Coordenacao 01 ->  Financeiro -> Liderança 01 -> Colaborador 01
+Presidencia -> Diretor 03 -> Administrativo -> Coordenacao 01 ->  Financeiro -> Liderança 01 -> Colaborador 02
+Presidencia -> Diretor 03 -> Administrativo -> Coordenacao 01 ->  Financeiro -> Liderança 01 -> Colaborador 03
+Presidencia -> Diretor 03 -> Administrativo -> Coordenacao 01 ->  Fiscal -> Liderança 01 -> Colaborador 01
+Presidencia -> Diretor 03 -> Administrativo -> Coordenacao 01 ->  Fiscal -> Liderança 01 -> Colaborador 02
+Presidencia -> Diretor 03 -> Administrativo -> Coordenacao 01 ->  Contábil -> Liderança 01 -> Colaborador 01
+Presidencia -> Diretor 03 -> Administrativo -> Coordenacao 01 ->  Contábil -> Liderança 01 -> Colaborador 02
+Presidencia -> Diretor 03 -> Administrativo -> Coordenacao 01 ->  RH -> Liderança 01 -> Colaborador 01
+Presidencia -> Diretor 03 -> Administrativo -> Coordenacao 01 ->  RH -> Liderança 01 -> Colaborador 02
+Presidencia -> Diretor 03 -> Administrativo -> Coordenacao 01 ->  RH -> Liderança 01 -> Colaborador 03
+Presidencia -> Diretor 03 -> Administrativo -> Coordenacao 01 ->  RH -> Liderança 01 -> Colaborador 04`;
+   
     // Estado
     let rows = [];
     let svgText = '';
@@ -598,6 +640,8 @@
       try { await navigator.clipboard.writeText(svgText); alert('SVG copiado para a área de transferência.'); }
       catch { alert('Não foi possível copiar automaticamente. Baixe o arquivo.'); }
     });
+      $('#rawInput').value = SAMPLE;
+
   </script>
 </body>
 </html>
