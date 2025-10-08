@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Gerador de Organograma SVG — 7 níveis</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header>
+    <h1>Gerador de Organograma SVG — 7 níveis</h1>
+    <span class="hint">Estrutura: Presidência → Diretoria → Departamento → Coordenação → Subárea → Liderança → Colaborador</span>
+  </header>
+
+  <div class="wrap">
+    <section class="card" style="grid-column: 1 / -1;">
+      <h2>1) Entrada de dados (7 níveis)</h2>
+      <div class="card-body">
+        <textarea id="rawInput" placeholder="Ex.:\nPresidencia -> Diretor 01 -> Produção -> Coordenacao 01 -> Venoc -> Liderança 01 -> Colaborador 01"></textarea>
+        <div class="row" style="margin-top:10px; justify-content: space-between;">
+          <div class="tools">
+            <button id="btnParse" class="primary">Gerar tabela editável</button>
+            <button id="btnClear" class="ghost">Limpar</button>
+          </div>
+          <div class="small">Cada linha = caminho completo. Espaços extras são ignorados.</div>
+        </div>
+
+        <hr style="border: none; border-top: 1px solid var(--border); margin: 14px 0;" />
+        
+        <div class="row" style="align-items:center; justify-content: space-between;">
+          <div style="flex:1; padding-right:10px;">
+            <label for="chartTitle">Título do organograma</label>
+            <input type="text" id="chartTitle" value="Organograma – Estrutura por Diretoria" />
+          </div>
+          <div class="row">
+            <div>
+              <label>Dimensões do SVG</label>
+              <div class="row">
+                <input type="text" id="svgWidth" value="1600" style="width:100px;" />
+                <span class="hint">×</span>
+                <input type="text" id="svgHeight" value="1400" style="width:100px;" />
+              </div>
+            </div>
+            <div>
+              <label>Baixar ao gerar</label><br/>
+              <select id="autoDownload">
+                <option value="yes">Sim</option>
+                <option value="no" selected>Não</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div style="margin-top:10px; display:grid; grid-template-columns: 1fr 1fr; gap:14px;">
+          <div>
+            <h3 style="margin:4px 0 8px; font-size:13px; color:var(--muted);">Cores por Diretoria</h3>
+            <div id="directorColors" class="row" style="flex-direction:column; gap:8px;"></div>
+          </div>
+          <div>
+            <h3 style="margin:4px 0 8px; font-size:13px; color:var(--muted);">Cores por Liderança (pílulas)</h3>
+            <div id="leadColors" class="row" style="flex-direction:column; gap:8px;"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card" style="grid-column: 1 / -1;">
+      <h2>2) Tabela editável</h2>
+      <div class="card-body">
+        <div class="tools" style="margin-bottom:10px;">
+          <button id="btnAddRow">+ Linha</button>
+          <button id="btnDeleteSelected" class="danger">Excluir selecionadas</button>
+          <button id="btnExportCSV">Exportar CSV</button>
+          <input type="file" id="csvFile" accept=".csv" style="display:none;" />
+          <button id="btnImportCSV">Importar CSV</button>
+          <span id="rowCounter" class="small" style="margin-left:auto;"></span>
+        </div>
+        <div style="max-height:360px; overflow:auto; border:1px solid var(--border); border-radius: 10px;">
+          <table id="dataTable">
+            <thead>
+              <tr>
+                <th style="width:30px;"><input type="checkbox" id="checkAll" /></th>
+                <th>Presidência</th>
+                <th>Diretoria</th>
+                <th>Departamento</th>
+                <th>Coordenação</th>
+                <th>Subárea</th>
+                <th>Liderança</th>
+                <th>Colaborador</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section class="card" style="grid-column: 1 / -1;">
+      <h2>3) Gerar e visualizar SVG</h2>
+      <div class="card-body">
+        <div class="tools" style="margin-bottom:10px;">
+          <button id="btnGenerate" class="success">Gerar SVG</button>
+          <button id="btnDownload" disabled>Baixar SVG</button>
+          <button id="btnCopy" disabled>Copiar SVG</button>
+        </div>
+        <div id="svgContainer" class="preview"></div>
+      </div>
+      <div class="footer hint">Linhas sólidas = reporte hierárquico. Subárea contém pílula de Liderança e lista de Colaboradores.</div>
+    </section>
+  </div>
+
+<script src="script.js"></script>
+</body>
+</html>
